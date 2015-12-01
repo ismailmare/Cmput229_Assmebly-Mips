@@ -1,0 +1,67 @@
+Lab 1 Questions
+
+
+
+Question 1:
+		The output of the program is Number = 35
+
+Question 2:
+		The maximum value of register $t0 is = 000000d3
+
+Question 3:
+		The maximum value of PC immidiatly before the execution of
+		instruction that increments register $t0 is 0x00400038
+
+Question 4:
+		Load word is executed 6 times in the loop values loaded are 
+		the array of numbers 20, 34, 52, 86, 19, 0
+
+Question 5:
+		10010018: N
+		10010019: u
+		1001001A: m
+		1001001B: b 
+		1001001C: e
+		1001001D: r
+
+Question 6:
+		They would form
+		33 = 3
+		44 = D
+		00 = NUL
+		3c = <
+		
+Question 7:
+		33 = 001101 = 13
+		44 = 0111100 = 60
+		00 = 0 =
+		3c = 000100 = 4
+
+		
+Question 8:
+		word 21, 88, -5, -10 : Stores four 32 bit quantities in 
+		successive memory words
+			21: 0X00000015
+			88: 0X00000058
+			-5: 0Xfffffffb
+			-10: 0Xfffffff6
+
+		byte 10 'c' : Stores the values 10 and c in successive 
+			bytes of memory
+			10: 0X0000630a\
+
+		align 2: Aligns the next datum on a 2^n byte boundary.
+
+		space 9 : Allocates nine bytes (72 Bits) of space in the 
+			current segment
+
+		asciiz ABCD: Stores the string ABCD in memory and null term
+ 
+		ascii EF:   Stores the string EF in memory but do not null term.
+
+Question 9:
+		To display contents of only the register $s0, run spin via 
+		terminal, then enter 'print $s0'
+
+Question 10:
+

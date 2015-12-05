@@ -13,7 +13,7 @@ noFileStr:
 	.asciiz "Couldn't open specified file.\n"
 
 .align 2
-code: .space 2000
+code: .space 2052
 
 op1: .asciiz "add"
 op2: .asciiz "addi"
@@ -483,7 +483,6 @@ MIPStoARM:
       # Reading pointer to memory containing a MIPS function
 	la $t2 code # Holds the address of the space to hold the arm instruc0on
 	condition_check:
-
 		li $s0 0
 		li $s1 0
 		li $s2 0
@@ -496,7 +495,9 @@ MIPStoARM:
 		
 		lw $t1 0($a0)
 		add $a0 $a0 4
-		beq $t1 0xffffffff end
+		beq $t1 0xFFFFFFFF end
+		#beq $t0 10 end
+
 
 		srl $t4 $t1 26  	 #Shifting to get OPcode
 		li $s1 0xE
@@ -507,36 +508,42 @@ MIPStoARM:
 
 		Rtype:
 			srl $t4 $t1 6
-			ori $s2 $t4 0x1F	# Shift amt 
+			andi $s2 $t4 0x1F	# Shift amt 
 			srl $t4 $t4 5
-			ori $s5 $t4  0xF	# The destination operand
+			andi $s5 $t4  0x1F	# The RD operand
 			srl $t4 $t4 5
-			ori $s4 $t4  0xF	# The Target operand
+			andi $s4 $t4  0x1F	# The R1 operand
 			srl $t4 $t4 5
-			ori $s3 $t4  0xF	# The source operand
+			andi $s3 $t4  0x1F	# The R2 operand
 			srl $t4 $t4 5
-			ori $t4 $t1 0x3F
+			andi $t4 $t1 0x3F
 		   	  			      #Reading function code 0-6
+
+		   	bgt $s4 0xf nop_
+			bgt $s3 0xf nop_
+			bgt $s5 0xf nop_
 			beq $t4 0x22 sub_ #Function Rtype
 			beq $t4 0x25 or_ #Function Rtype
 			beq $t4 0x24 and_  #Function Rtype
 			beq $t4 0x20 add_ #Function Rtype
 			beq $t4 0x00 sll_ #Function Rtype
 			beq $t4 0x04 sllv_ #Function Rtype
-			beq $t4 0x03 srl_ #Function Rtype
+			beq $t4 0x02 srl_ #Function Rtype
 			beq $t4 0x06 srlv_ #Function Rtype
 			beq $t4 0x03 sra_  #Function Rtype
 			beq $t4 0x20 add_ #Function Rtype
 			j condition_check
 
 		Itype:
-			ori $s2 $t1 0xFF    # The instruction value
+			andi $s2 $t1 0xFF    # The instruction value
 			srl $t4 $t1 16
-			ori $s3 $t4  0xF	# The source operand
+			andi $s4 $t4  0x1F	# The RD operand
 			srl $t4 $t4 5		
-			ori $s4 $t4 0xF	# The target operand
+			andi $s3 $t4 0x1F	# The R1 operand
 			srl $t4 $t4 5
-			
+
+			bgt $s4 0xf nop_
+			bgt $s3 0xf nop_			
 
 			srl $t4 $t1 26		#Shifting to get OPcode
 			beq $t4 0x8 addi_ #OPcode Itype
@@ -551,78 +558,47 @@ MIPStoARM:
 	
 		sll_:
 			li $s0 0xd
-			la	$a0 op1
-			li	$v0 4
-			syscall
 			li $t8 0x0
 
 			j R_shift
 
-		sllv:
+		sllv_:
 			li $s0 0xd
-			la	$a0 op1
-			li	$v0 4
-			syscall
 			li $t8 0x0
 			j R_shift
 
-		srl:
+		srl_:
 			li $s0 0xd
-			la	$a0 op1
-			li	$v0 4
-			syscall
 			li $t8 0x1
 			j R_shift
 
-		srlv:
+		srlv_:
 			li $s0 0xd
-			la	$a0 op1
-			li	$v0 4
-			syscall
 			li $t8 0x1
 			j R_shift
 
-		sra:
+		sra_:
 			li $s0 0xd
-			la	$a0 op1
-			li	$v0 4
-			syscall
 			li $t8 0x2
 			j R_shift
 
 
 		add_:
 			li $s0 0x4
-			la	$a0 op1
-			li	$v0 4
-			syscall
-
 			j R_continue
 		
 
 		and_:
-
 			li $s0 0x0
-			la	$a0 op3
-			li	$v0 4
-			syscall
-
 			j R_continue
 			
 		sub_:
 			li $s0 0x2
-			la	$a0 op7
-			li	$v0 4
-			syscall
 			j R_continue
 			
 
 		or_:
 			li $s0 0xC
-			la	$a0 op5
-			li	$v0 4
-			syscall	
-
 			j R_continue
 
 			
@@ -632,53 +608,40 @@ MIPStoARM:
 		andi_:
 			bltz $s2 sub_
 			li $s0 0x0
-			
-			la	$a0 op4
-			li	$v0 4
-			syscall
-
 			j I_continue	
 	
 			
 			
 		ori_:
 			li $s0 0xC
-			
-			la	$a0 op6
-			li	$v0 4
-			syscall	
-	
 			j I_continue
 
 		addi_:
 			li $s0 0x4
-
-			la	$a0 op2
-			li	$v0 4
-			syscall
-
 			j I_continue
 			
 
 		R_continue:
-			sll $s1 $s1 11
+			sll $s1 $s1 7
 			or $s1 $s0 $s1
 			sll $s1 $s1 5
 			or $s1 $s1 $s3
 			sll $s1 $s1 4
-			or $s1 $s1 $s4
-			sll $s1 $s1 12
 			or $s1 $s1 $s5
+			sll $s1 $s1 12
+			or $s1 $s1 $s4
 			or $s6 $s1 $s6
 
-			sw $s6 0(t2)
-			add $t2 $t1 4
+			sw $s6 0($t2)
+			add $t2 $t2 4
+			add $t0 $t0 1
 			j condition_check
 
 		I_continue:
-			sll $s1 $s1 11
-			or $s1 $s0 $s1
-			ori $s1 $s1 0x10
+			sll $s1 $s1 3
+			ori $s1 $s1 0x1
+			sll $s1 $s1 4
+			or $s1 $s1 $s0 
 			sll $s1 $s1 5
 			or $s1 $s1 $s3
 			sll $s1 $s1 4
@@ -687,60 +650,73 @@ MIPStoARM:
 			or $s1 $s1 $s2
 			or $s7 $s7 $s1
 
-			sw $s6 0(t2)
+			sw $s7 0($t2)
 			add $t2 $t2 4
+			add $t0 $t0 1
 			j condition_check
 
 
 		R_shift:
 			beq $s3 $zero R_imm
 
-			sll $s1 $s1 11
+			sll $s1 $s1 7
 			or $s1 $s0 $s1
 			sll $s1 $s1 5
-			or $s1 $s1 $s4
+			or $s1 $s1 $s3
 			sll $s1 $s1 4
 			or $s1 $s1 $s5
 			sll $s1 $s1 4
 			or $s1 $s1 $s3
+
 			sll $s1 $s1 3
 			or $s1 $s1 $t8
-			sll $s1 $s1 1
+			sll $s1 $s1 1	   ##Shift amount and direction
 			or $s1 $s1 0x1	   ##Shift amount and direction
- 
 			sll $s1 $s1 4
-			or $s1 $s1 $s5
+			or $s1 $s1 $s4
 			or $s6 $s1 $s6
 
-			sw $s6 0(t2)
-			add $t2 $t1 4
+			sw $s6 0($t2)
+			add $t2 $t2 4
+			add $t0 $t0 1
 			j condition_check
 
-
-
 		R_imm:
-			sll $s1 $s1 11
+			sll $s1 $s1 7
 			or $s1 $s0 $s1
 			sll $s1 $s1 5
 			or $s1 $s1 $s3
 			sll $s1 $s1 4
 			or $s1 $s1 $s5
-			sll $s1 $s1 8
-			sll $s2 $s2 2
-			or $s2 $s2 $t8
-			sll $s2 $s2 1	   ##Shift amount and direction
+			sll $s1 $s1 5
 			or $s1 $s1 $s2
-			or $s1 $s1 $s5
+			sll $s1 $s1 2
+			or $s1 $s1 $t8
+			sll $s1 $s1 1	   ##Shift amount and direction
+			sll $s1 $s1 4
+			or $s1 $s1 $s4
 			or $s6 $s1 $s6
 
-			sw $s6 0(t2)
-			add $t2 $t1 4
+			sw $s6 0($t2)
+			add $t2 $t2 4
+			add $t0 $t0 1
 			j condition_check
+
+
+		nop_:
+			li $s6 0xe1a00000
+			sw $s6 0($t2)
+			add $t2 $t2 4
+			add $t0 $t0 1
+			j condition_check
+
 
 
    	end:
 		move $v0 $t0
-		move $v1 $t2
+		la $v1 code
 		jr $ra
+
+
 
 
